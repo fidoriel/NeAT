@@ -1,13 +1,17 @@
 version: "3.9"
 
+
 services:
   neat:
     container_name: neat
+    image: fidoriel/neat
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - .:/root/neat
+      - /root/neat/build
+      - /root/neat/External
     command: sleep infinity
     deploy:
       resources:

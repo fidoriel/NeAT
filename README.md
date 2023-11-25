@@ -1,5 +1,17 @@
 ## Install Instructions
 
+### Docker
+
+* Install Docker and Nvidia-Docker-Container-Runtime
+
+```bash
+docker compose up -d
+docker compose exec neat bash
+```
+now you can continue with [Run Instructions](#run-instructions)
+
+### Conda
+
 * Prepare Host System (Ubuntu)
 ```shell
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test

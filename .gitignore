@@ -18,3 +18,4 @@ Experiments/
 *.zip
 scenes
 scenes/
+*.log

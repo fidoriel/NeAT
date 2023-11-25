@@ -3,12 +3,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y \
     && apt-get install -y build-essential \
-    && apt-get install -y wget git unzip libxml2-dev librhash-dev software-properties-common pkg-config libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev doxygen
+    && apt-get install -y wget unzip libxml2-dev librhash-dev software-properties-common pkg-config libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libassimp-dev git
 
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y && \
     apt-get update -y && \
     apt install g++-9 -y && \
-    g++-9 --version 
+    g++-9 --version
 
 WORKDIR /root
 # Install miniconda
@@ -18,11 +18,9 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 
 # Put conda in path so we can use conda activate
 ENV PATH=$CONDA_DIR/bin:$PATH
-RUN conda --version
 
 RUN mkdir /root/neat
 WORKDIR /root/neat
-COPY ./ ./
 
 RUN conda create -y -n neat python=3.8
 ENV CONDA_DEFAULT_ENV neat
@@ -36,24 +34,31 @@ RUN wget https://download.pytorch.org/libtorch/cu113/libtorch-cxx11-abi-shared-w
     unzip libtorch.zip -d . && rm libtorch.zip && \
     cp -rv libtorch/ $CONDA_DIR/envs/neat/lib/python3.8/site-packages/torch/
 
+RUN ln -sf /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /root/anaconda3/envs/neat/bin/../lib/libstdc++.so.6
+
+COPY ./ ./
+RUN git submodule update --init --recursive --jobs 1 --depth 1
+
 RUN mkdir build
 WORKDIR /root/neat/build
 RUN bash -c "source activate neat && \
     conda env config vars set CC=gcc-9 && \
     conda env config vars set CXX=g++-9 && \
     conda env config vars set CUDAHOSTCXX=g++-9 && \
-    conda env config vars set CONDA=/root/anaconda3/envs/neat"
+    conda env config vars set CONDA=/root/anaconda3/envs/neat && \
+    conda env config vars set LD_LIBRARY_PATH=/root/anaconda3/envs/neat/lib"
 
 ENV CC gcc-9
 ENV CXX g++-9
 ENV CUDAHOSTCXX g++-9
 ENV CONDA=/root/anaconda3/envs/neat
+ENV LD_LIBRARY_PATH=/root/anaconda3/envs/neat/lib
 
-RUN export CC=gcc-9 && \
-    export CXX=g++-9 && \
-    export CUDAHOSTCXX=g++-9 && \
-    export CONDA=/root/anaconda3/envs/neat
+ENV CUDA_ARCH="6.1 7.0 7.5 8.0 8.6+PTX"
+
 RUN bash -c "conda init"
-# RUN bash -c "conda activate neat && cmake -DCMAKE_PREFIX_PATH="${CONDA}/lib/python3.8/site-packages/torch/;${CONDA}" -DTorch_DIR="/root/neat/External/libtorch/share/cmake/Torch/"  .. && make -j"
+RUN echo "conda activate neat" >> ~/.bashrc
+RUN conda run -n neat cmake -DCMAKE_PREFIX_PATH="${CONDA}/lib/python3.8/site-packages/torch/;${CONDA}" -DTorch_DIR="/root/neat/External/libtorch/share/cmake/Torch/" -DSAIGA_CUDA_ARCH="${CUDA_ARCH}" -DTORCH_CUDA_ARCH_LIST="${CUDA_ARCH}" ..
+RUN make -j4
 
 WORKDIR /root/neat
