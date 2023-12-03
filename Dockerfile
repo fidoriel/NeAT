@@ -37,8 +37,6 @@ RUN wget https://download.pytorch.org/libtorch/cu113/libtorch-cxx11-abi-shared-w
 RUN ln -sf /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /root/anaconda3/envs/neat/bin/../lib/libstdc++.so.6
 
 COPY ./ ./
-RUN mkdir -p ~/.ssh
-RUN echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 RUN git submodule update --init --recursive --jobs 1 --depth 1
 
 RUN mkdir build
