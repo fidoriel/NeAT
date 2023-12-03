@@ -5,6 +5,7 @@
 * Install Docker and Nvidia-Docker-Container-Runtime
 
 ```bash
+git submodule update --init --recursive --jobs 1 --depth 1
 docker compose up -d
 docker compose exec neat bash
 ```
