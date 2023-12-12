@@ -19,3 +19,5 @@ Experiments/
 scenes
 scenes/
 *.log
+.venv/*
+venv/*
