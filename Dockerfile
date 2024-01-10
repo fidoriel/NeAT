@@ -1,9 +1,9 @@
-FROM ubuntu:22.04
+FROM nvidia/cuda:11.5.2-cudnn8-devel-ubuntu20.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y \
     && apt-get install -y build-essential \
-    && apt-get install -y wget unzip libxml2-dev librhash-dev software-properties-common pkg-config libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libassimp-dev git
+    && apt-get install -y wget unzip libxml2-dev librhash-dev software-properties-common pkg-config libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libassimp-dev git protobuf-c-compiler  
 
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y && \
     apt-get update -y && \
@@ -25,12 +25,12 @@ WORKDIR /root/neat
 RUN conda create -y -n neat python=3.8
 ENV CONDA_DEFAULT_ENV neat
 
+RUN conda install -n neat -y anaconda:git anaconda:protobuf
 RUN conda install -n neat -y ncurses=6.3 -c conda-forge
-RUN conda install -y cudnn=8.2.1 cudatoolkit-dev=11.3.1 cudatoolkit=11.3.1 -c nvidia -c conda-forge
 RUN conda install -n neat -y configargparse=1.4 astunparse=1.6.3 numpy=1.21.2 ninja=1.10.2 pyyaml mkl=2022.0.1 mkl-include=2022.0.1 setuptools=58.0.4 cmake=3.19.6 cffi=1.15.0 typing_extensions=4.1.1 future=0.18.2 six=1.16.0 requests=2.27.1 dataclasses=0.8
 RUN conda install -n neat -y magma-cuda110=2.5.2 -c pytorch
 RUN conda install -n neat -y -c conda-forge coin-or-cbc=2.10.5 glog=0.5.0 gflags=2.2.2 protobuf=3.13.0.1 freeimage=3.17 tensorboard=2.8.0
-RUN wget https://download.pytorch.org/libtorch/cu113/libtorch-cxx11-abi-shared-with-deps-1.11.0%2Bcu113.zip -O  libtorch.zip && \
+RUN wget https://download.pytorch.org/libtorch/cu115/libtorch-cxx11-abi-shared-with-deps-1.11.0%2Bcu115.zip -O  libtorch.zip && \
     unzip libtorch.zip -d . && rm libtorch.zip && \
     cp -rv libtorch/ $CONDA_DIR/envs/neat/lib/python3.8/site-packages/torch/
 
@@ -41,18 +41,18 @@ RUN git submodule update --init --recursive --jobs 1 --depth 1
 
 RUN mkdir build
 WORKDIR /root/neat/build
+ENV LD_LIBRARY_PATH=/root/anaconda3/envs/neat/lib:${LD_LIBRARY_PATH}
 RUN bash -c "source activate neat && \
     conda env config vars set CC=gcc-9 && \
     conda env config vars set CXX=g++-9 && \
     conda env config vars set CUDAHOSTCXX=g++-9 && \
     conda env config vars set CONDA=/root/anaconda3/envs/neat && \
-    conda env config vars set LD_LIBRARY_PATH=/root/anaconda3/envs/neat/lib"
+    conda env config vars set LD_LIBRARY_PATH=/root/anaconda3/envs/neat/lib:${LD_LIBRARY_PATH}"
 
 ENV CC gcc-9
 ENV CXX g++-9
 ENV CUDAHOSTCXX g++-9
 ENV CONDA=/root/anaconda3/envs/neat
-ENV LD_LIBRARY_PATH=/root/anaconda3/envs/neat/lib
 
 ENV CUDA_ARCH="6.1 7.0 7.5 8.0 8.6+PTX"
 
